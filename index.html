@@ -9,33 +9,31 @@
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 
-    <!-- Embedded CSS for Canvas compatibility -->
     <style>
         /* General Body and Background Styling */
         body {
-            font-family: 'Poppins', sans-serif; /* Poppins for a clean, modern look */
-            background-color: #ffffff; /* Pure white background */
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow-y: auto; /* Allow vertical scrolling if content overflows */
+            overflow-y: auto;
             position: relative;
-            color: #333; /* Soft dark grey for text */
+            color: #333;
             text-rendering: optimizeLegibility;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            padding: 20px; /* Add some padding to body to prevent widget touching edges */
-            box-sizing: border-box; /* Include padding in element's total width and height */
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        /* Whimsical Background Elements (Baby Pink/Light Blue) */
         body::before, body::after {
             content: '';
             position: absolute;
             border-radius: 50%;
-            filter: blur(100px); /* Soft blur effect */
+            filter: blur(100px);
             opacity: 0.6;
-            z-index: -1; /* Keep behind content */
+            z-index: -1;
         }
 
         body::before {
@@ -43,7 +41,7 @@
             left: -100px;
             width: 300px;
             height: 300px;
-            background: #ffe0f0; /* Very light pink */
+            background: #ffe0f0;
         }
 
         body::after {
@@ -51,24 +49,23 @@
             right: -120px;
             width: 350px;
             height: 350px;
-            background: #e0f7fa; /* Very light blue */
+            background: #e0f7fa;
         }
 
-        /* Widget Container Styling (White with Baby Pink Border) */
         .widget-container {
-            background: #ffffff; /* Pure white widget background */
+            background: #ffffff;
             padding: 40px;
-            border-radius: 35px; /* More rounded, softer look */
-            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.1); /* Lighter, diffused shadow */
+            border-radius: 35px;
+            box-shadow: 0 18px 60px rgba(0, 0, 0, 0.1);
             text-align: center;
-            max-width: 450px; /* Slightly wider */
+            max-width: 450px;
             width: 90%;
-            border: 2px solid #ffcdd2; /* Delicate light pink border */
-            backdrop-filter: blur(5px); /* Reduced blur as background is now white */
-            animation: fadeIn 0.8s ease-out forwards; /* Gentle fade-in */
-            display: flex; /* Use flexbox for internal layout */
+            border: 2px solid #ffcdd2;
+            backdrop-filter: blur(5px);
+            animation: fadeIn 0.8s ease-out forwards;
+            display: flex;
             flex-direction: column;
-            gap: 25px; /* Space between sections */
+            gap: 25px;
         }
 
         @keyframes fadeIn {
@@ -76,14 +73,10 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Header Typography */
-        .header {
-            margin-bottom: 5px;
-        }
+        .header { margin-bottom: 5px; }
 
         h1 {
-            font-family: 'Poppins', sans-serif;
-            color: #ff80ab; /* Baby Pink - main accent */
+            color: #ff80ab;
             font-size: 2.8em;
             margin-bottom: 5px;
             text-shadow: 1px 1px 3px rgba(0,0,0,0.05);
@@ -92,24 +85,21 @@
         }
 
         .subtitle {
-            font-family: 'Poppins', sans-serif;
-            color: #d81b60; /* Slightly deeper pink for contrast */
+            color: #d81b60;
             font-size: 1.1em;
             margin-top: 0;
-            font-style: normal;
             opacity: 0.9;
             font-weight: 500;
         }
 
-        /* Progress Section (Intake & Goal Display & Bar) */
         .progress-section {
             display: flex;
             flex-direction: column;
             gap: 15px;
-            background-color: #fff0f5; /* Lavender blush - very pale pink */
+            background-color: #fff0f5;
             padding: 20px;
             border-radius: 20px;
-            border: 1px solid #ffcdd2; /* Light pink */
+            border: 1px solid #ffcdd2;
             box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
         }
 
@@ -119,14 +109,9 @@
             align-items: center;
         }
 
-        .intake-display-wrapper, .goal-display-wrapper {
-            flex: 1;
-            text-align: center;
-        }
-
         .intake-label, .goal-label {
             font-size: 0.95em;
-            color: #6a6a6a; /* Soft grey */
+            color: #6a6a6a;
             margin-bottom: 5px;
             opacity: 0.9;
             font-weight: 500;
@@ -135,31 +120,26 @@
         .intake-value {
             font-size: 2.5em;
             font-weight: 700;
-            color: #ff80ab; /* Baby Pink for intake value */
+            color: #ff80ab;
             margin: 0;
-            line-height: 1;
-            transition: color 0.3s ease;
         }
 
         .goal-value {
             font-size: 1.7em;
             font-weight: 600;
-            color: #c2185b; /* Darker Pink for goal value */
+            color: #c2185b;
             margin: 0;
-            line-height: 1;
         }
 
         .unit-display {
             font-size: 0.7em;
             vertical-align: super;
             margin-left: 2px;
-            font-weight: normal;
         }
 
-        /* Progress Bar Styling */
         .progress-bar-container {
             width: 100%;
-            background-color: #ffebee; /* Lightest pink background */
+            background-color: #ffebee;
             border-radius: 10px;
             overflow: hidden;
             height: 20px;
@@ -168,8 +148,8 @@
 
         .progress-bar-fill {
             height: 100%;
-            width: 0%; /* Initial width */
-            background: linear-gradient(90deg, #ffcdd2, #ff80ab); /* Light to baby pink gradient */
+            width: 0%;
+            background: linear-gradient(90deg, #ffcdd2, #ff80ab);
             border-radius: 10px;
             transition: width 0.5s ease-out;
             display: flex;
@@ -180,48 +160,35 @@
         }
 
         .progress-bar-fill.goal-met {
-            background: linear-gradient(90deg, #e3f2fd, #bbdefb); /* Very light blue gradient for goal met */
+            background: linear-gradient(90deg, #e3f2fd, #bbdefb);
         }
 
-        /* Input and Add Button Section */
         .input-add-section {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 18px;
-            margin-bottom: 5px;
         }
 
         input[type="number"] {
             padding: 15px 22px;
-            border: 1px solid #ffcdd2; /* Light pink border */
+            border: 1px solid #ffcdd2;
             border-radius: 15px;
             font-size: 1.3em;
-            width: calc(100% - 44px);
             max-width: 200px;
             text-align: center;
             color: #333;
-            transition: all 0.3s ease;
             box-shadow: inset 0 2px 6px rgba(0,0,0,0.05);
-            -moz-appearance: textfield; /* Remove Firefox number input arrows */
-        }
-
-        /* Hide spin buttons for Webkit (Chrome, Safari) */
-        input[type="number"]::-webkit-outer-spin-button,
-        input[type="number"]::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
         }
 
         input[type="number"]:focus {
-            border-color: #ff80ab; /* Baby Pink on focus */
+            border-color: #ff80ab;
             box-shadow: 0 0 0 5px rgba(255, 128, 171, 0.2);
             outline: none;
         }
 
-        /* Main buttons: Add Water, Set Goal */
         button {
-            background: linear-gradient(145deg, #ffc0cb, #ff80ab); /* Light to Baby Pink gradient */
+            background: linear-gradient(145deg, #ffc0cb, #ff80ab);
             color: white;
             padding: 15px 30px;
             border: none;
@@ -229,9 +196,7 @@
             font-size: 1.25em;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 8px 20px rgba(255, 128, 171, 0.3); /* Baby Pink shadow */
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
+            box-shadow: 0 8px 20px rgba(255, 128, 171, 0.3);
             font-weight: bold;
             display: flex;
             align-items: center;
@@ -239,45 +204,28 @@
         }
 
         button:hover {
-            background: linear-gradient(145deg, #ff80ab, #e91e63); /* Baby pink to deep pink gradient on hover */
+            background: linear-gradient(145deg, #ff80ab, #e91e63);
             transform: translateY(-4px);
             box-shadow: 0 10px 25px rgba(233, 30, 99, 0.4);
-        }
-
-        button:active {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 12px rgba(233, 30, 99, 0.3);
         }
 
         button:disabled {
             background: #ccc;
             cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
         }
 
-        /* Small Button (for Set Goal) - specific overrides for its size */
         .small-btn {
             padding: 10px 18px;
             font-size: 1em;
             border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(255, 128, 171, 0.2); /* Baby Pink shadow */
-            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(255, 128, 171, 0.2);
         }
 
-        .small-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(233, 30, 99, 0.3); /* Deeper pink shadow on hover */
-        }
-
-        /* Secondary Button (for Reset Today's Intake) */
         .secondary-btn {
-            background: none; /* Transparent background */
-            border: 1px solid #ff80ab; /* Baby Pink border */
-            color: #ff80ab; /* Baby Pink text */
-            box-shadow: none;
+            background: none;
+            border: 1px solid #ff80ab;
+            color: #ff80ab;
             font-weight: 500;
-            text-transform: none;
             padding: 12px 20px;
             font-size: 1.05em;
             margin-top: 15px;
@@ -287,89 +235,35 @@
         }
 
         .secondary-btn:hover {
-            background-color: #ffebee; /* Lightest pink background on hover */
-            color: #d81b60; /* Deep pink text on hover */
-            box-shadow: 0 2px 8px rgba(255, 128, 171, 0.1);
-            transform: translateY(-1px);
+            background-color: #ffebee;
+            color: #d81b60;
         }
 
-        /* Message Area */
         .message {
             margin-top: 5px;
             font-size: 1em;
             color: #555;
             min-height: 25px;
-            transition: color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
-            opacity: 0.9;
             font-weight: 500;
         }
 
-        .message.success {
-            color: #4CAF50; /* Green for success */
-            font-weight: 600;
-            transform: scale(1.03);
-            opacity: 1;
-        }
+        .message.success { color: #4CAF50; }
+        .message.error { color: #f44336; }
 
-        .message.error {
-            color: #f44336; /* Red for error */
-            font-weight: 600;
-            transform: scale(1.03);
-            opacity: 1;
-        }
-
-        /* Settings Section */
         .settings-section {
             padding-top: 25px;
-            border-top: 1px dashed #ffcdd2; /* Delicate dashed light pink separator */
+            border-top: 1px dashed #ffcdd2;
         }
 
-        .setting-label {
-            font-size: 1em;
-            color: #c2185b; /* Darker pink */
-            margin-bottom: 10px;
-            display: block;
-            font-weight: 600;
-        }
-
-        .goal-input-wrapper {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .goal-input-wrapper input {
-            max-width: 150px; /* Smaller input for goal setting */
-        }
-
-        /* Unit Toggle Button */
         .unit-toggle-button {
-            background-color: #ffffff; /* White background */
-            color: #ff80ab; /* Baby Pink text */
+            background-color: #ffffff;
+            color: #ff80ab;
             padding: 8px 15px;
-            border: 1px solid #ffc0cb; /* Baby Pink border */
+            border: 1px solid #ffc0cb;
             border-radius: 10px;
             font-size: 0.9em;
             cursor: pointer;
-            transition: all 0.2s ease;
-            margin-top: -10px;
-            margin-bottom: 15px;
             font-weight: 600;
-        }
-
-        .unit-toggle-button:hover {
-            background-color: #ffebee; /* Lightest pink background on hover */
-            color: #ff80ab; /* Baby Pink text on hover */
-            box-shadow: 0 2px 5px rgba(255, 128, 171, 0.15);
-        }
-
-        /* Responsive Adjustments */
-        @media (min-width: 500px) {
-            .input-add-section {
-                flex-direction: row;
-                justify-content: center;
-            }
         }
     </style>
 </head>
@@ -380,45 +274,122 @@
             <p class="subtitle">Stay hydrated!</p>
         </div>
 
-        <button id="unitToggle" class="unit-toggle-button" aria-label="Toggle units between milliliters and liters">Switch to Liters</button>
+        <button id="unitToggle" class="unit-toggle-button">Switch to Liters</button>
 
         <div class="progress-section">
             <div class="intake-goal-display">
-                <div class="intake-display-wrapper">
+                <div>
                     <p class="intake-label">Today's Intake</p>
-                    <p class="intake-value"><span id="todayIntake">0</span> <span class="unit-display" id="currentIntakeUnit">ml</span></p>
+                    <p class="intake-value"><span id="todayIntake">0</span> <span id="currentIntakeUnit">ml</span></p>
                 </div>
-                <div class="goal-display-wrapper">
+                <div>
                     <p class="goal-label">Goal</p>
-                    <p class="goal-value"><span id="waterGoal">2000</span> <span class="unit-display" id="currentGoalUnit">ml</span></p>
+                    <p class="goal-value"><span id="waterGoal">2000</span> <span id="currentGoalUnit">ml</span></p>
                 </div>
             </div>
             <div class="progress-bar-container">
-                <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;"></div>
+                <div class="progress-bar-fill" id="progressBarFill"></div>
             </div>
         </div>
 
         <div class="input-add-section">
-            <input type="number" id="waterAmount" placeholder="Add amount" min="1" value="250" aria-label="Amount of water to add">
-            <button id="addWaterBtn" aria-label="Add water intake">
-                <i class="fas fa-plus-circle"></i> Add Water
-            </button>
+            <input type="number" id="waterAmount" placeholder="Add amount" min="1" value="250">
+            <button id="addWaterBtn"><i class="fas fa-plus-circle"></i> Add Water</button>
         </div>
 
-        <p id="message" class="message" role="status" aria-live="polite"></p>
+        <p id="message" class="message"></p>
 
         <div class="settings-section">
             <label for="setGoalInput" class="setting-label">Set Goal:</label>
             <div class="goal-input-wrapper">
-                <input type="number" id="setGoalInput" placeholder="New goal" min="100" value="2000" aria-label="Set water goal">
-                <button id="setGoalBtn" class="small-btn" aria-label="Set new goal">Set Goal</button>
+                <input type="number" id="setGoalInput" placeholder="New goal" min="100" value="2000">
+                <button id="setGoalBtn" class="small-btn">Set Goal</button>
             </div>
-            <button id="resetDayBtn" class="secondary-btn" aria-label="Reset today's water intake">
-                <i class="fas fa-undo"></i> Reset Today's Intake
-            </button>
+            <button id="resetDayBtn" class="secondary-btn"><i class="fas fa-undo"></i> Reset Today's Intake</button>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        const addWaterBtn = document.getElementById("addWaterBtn");
+        const setGoalBtn = document.getElementById("setGoalBtn");
+        const resetDayBtn = document.getElementById("resetDayBtn");
+        const unitToggle = document.getElementById("unitToggle");
+
+        const waterAmountInput = document.getElementById("waterAmount");
+        const setGoalInput = document.getElementById("setGoalInput");
+
+        const todayIntakeDisplay = document.getElementById("todayIntake");
+        const waterGoalDisplay = document.getElementById("waterGoal");
+        const progressBarFill = document.getElementById("progressBarFill");
+        const message = document.getElementById("message");
+
+        const currentIntakeUnit = document.getElementById("currentIntakeUnit");
+        const currentGoalUnit = document.getElementById("currentGoalUnit");
+
+        let todayIntake = 0;
+        let waterGoal = 2000;
+        let useLiters = false;
+
+        function updateUI() {
+            let percentage = Math.min((todayIntake / waterGoal) * 100, 100);
+            progressBarFill.style.width = percentage + "%";
+
+            if (todayIntake >= waterGoal) {
+                progressBarFill.classList.add("goal-met");
+                message.textContent = "🎉 Goal reached!";
+                message.className = "message success";
+            } else {
+                progressBarFill.classList.remove("goal-met");
+                message.textContent = "";
+                message.className = "message";
+            }
+
+            todayIntakeDisplay.textContent = useLiters ? (todayIntake / 1000).toFixed(2) : todayIntake;
+            waterGoalDisplay.textContent = useLiters ? (waterGoal / 1000).toFixed(2) : waterGoal;
+
+            currentIntakeUnit.textContent = useLiters ? "L" : "ml";
+            currentGoalUnit.textContent = useLiters ? "L" : "ml";
+        }
+
+        addWaterBtn.addEventListener("click", () => {
+            let amount = parseInt(waterAmountInput.value, 10);
+            if (isNaN(amount) || amount <= 0) {
+                message.textContent = "⚠️ Please enter a valid amount.";
+                message.className = "message error";
+                return;
+            }
+            todayIntake += amount;
+            updateUI();
+        });
+
+        setGoalBtn.addEventListener("click", () => {
+            let newGoal = parseInt(setGoalInput.value, 10);
+            if (isNaN(newGoal) || newGoal < 100) {
+                message.textContent = "⚠️ Goal must be at least 100 ml.";
+                message.className = "message error";
+                return;
+            }
+            waterGoal = newGoal;
+            updateUI();
+            message.textContent = "✅ Goal updated!";
+            message.className = "message success";
+        });
+
+        resetDayBtn.addEventListener("click", () => {
+            todayIntake = 0;
+            updateUI();
+            message.textContent = "🔄 Intake reset!";
+            message.className = "message success";
+        });
+
+        unitToggle.addEventListener("click", () => {
+            useLiters = !useLiters;
+            unitToggle.textContent = useLiters ? "Switch to Milliliters" : "Switch to Liters";
+            updateUI();
+        });
+
+        updateUI();
+    </script>
 </body>
 </html>
+
