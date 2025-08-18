@@ -147,9 +147,9 @@
         </div>
 
         <div class="input-group w-full">
-            <label for="currentWater" class="text-sm text-gray-700 mb-1"><span id="currentInputLabel">Current Intake</span>:</label>
+            <label for="currentWater" class="text-sm text-gray-700 mb-1"><span id="currentInputLabel">Add Intake</span>:</label>
             <input type="number" id="currentWater" value="0" min="0" step="any" class="w-full p-2 border border-gray-300 rounded-md text-center">
-            <button id="addWaterBtn" class="mt-2 bg-pink-400 text-white py-2 px-4 rounded-lg shadow-md hover:bg-pink-500 transition-colors">Update Intake</button>
+            <button id="addWaterBtn" class="mt-2 bg-pink-400 text-white py-2 px-4 rounded-lg shadow-md hover:bg-pink-500 transition-colors">Add Water</button>
         </div>
 
         <div class="input-group w-full">
@@ -240,9 +240,10 @@
 
         // Updates input fields and labels based on the selected unit
         function updateInputAndDisplayBasedOnUnit() {
-            currentWaterInput.value = convertMLToSelectedUnit(currentWaterML);
+            // Note: currentWaterInput is now for *amount to add*, not current total display.
+            // So we only set the waterGoalInput here. currentWaterInput will be managed on add.
             waterGoalInput.value = convertMLToSelectedUnit(waterGoalML);
-            currentInputLabel.textContent = `Current Intake (${currentUnit})`;
+            currentInputLabel.textContent = `Add Intake (${currentUnit})`; // Changed label
             goalInputLabel.textContent = `Set Goal (${currentUnit})`;
             drawWater(); // Redraw canvas with new unit display
         }
@@ -309,7 +310,7 @@
 
             // Check if goal is reached
             if (currentWaterML >= waterGoalML && waterGoalML > 0) {
-                statusText.textContent = 'Goal Reached! �';
+                statusText.textContent = 'Goal Reached! 🎉';
             } else if (currentWaterML === 0 && waterGoalML === 0) {
                 statusText.textContent = 'Set your goal!';
             }
@@ -374,12 +375,14 @@
 
         // Event Listeners
         addWaterBtn.addEventListener('click', () => {
-            let amountInSelectedUnit = parseFloat(currentWaterInput.value);
-            if (!isNaN(amountInSelectedUnit) && amountInSelectedUnit >= 0) {
-                const targetWaterML = convertSelectedUnitToML(amountInSelectedUnit);
-                animateFill(targetWaterML); // Trigger the filling animation
+            let amountToAddInSelectedUnit = parseFloat(currentWaterInput.value);
+            if (!isNaN(amountToAddInSelectedUnit) && amountToAddInSelectedUnit >= 0) {
+                const amountToAddML = convertSelectedUnitToML(amountToAddInSelectedUnit);
+                const newTotalWaterML = currentWaterML + amountToAddML; // Add to current total
+                animateFill(newTotalWaterML); // Trigger the filling animation
+                currentWaterInput.value = '0'; // Reset input after adding
             } else {
-                currentWaterInput.value = convertMLToSelectedUnit(currentWaterML); // Reset to current valid value if input is bad
+                currentWaterInput.value = '0'; // Reset to 0 if input is invalid
             }
         });
 
@@ -409,4 +412,3 @@
     </script>
 </body>
 </html>
-�
