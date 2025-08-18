@@ -1,260 +1,413 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Water Tracker</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #ffffff; /* fully white background */
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Water Tracker Widget</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the widget */
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #ffffff; /* Page background is white */
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
 
-    .tracker {
-      background: #fff;
-      padding: 25px;
-      border-radius: 20px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-      max-width: 400px;
-      width: 90%;
-      text-align: center;
-    }
+        #widget-container {
+            width: 250px; /* Small fixed width for Notion dashboard */
+            height: auto;
+            background-color: #ffffff; /* Widget background is white */
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            text-align: center;
+        }
 
-    h1 {
-      font-size: 1.8em;
-      margin-bottom: 20px;
-      color: #333;
-    }
+        canvas {
+            border-radius: 50%; /* Ensures the canvas looks circular */
+            background-color: #fce4ec; /* Very light pink background for the empty part */
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05); /* Subtle inner shadow */
+        }
 
-    .progress-container {
-      background: #eee;
-      border-radius: 15px;
-      overflow: hidden;
-      height: 25px;
-      margin-bottom: 15px;
-    }
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
 
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, #ff9ecf, #ff66b2);
-      transition: width 0.3s ease-in-out;
-    }
+        .input-group label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
 
-    .progress-bar.goal-met {
-      background: linear-gradient(90deg, #4caf50, #45a049);
-    }
+        .input-group input[type="number"] {
+            width: calc(100% - 20px);
+            padding: 8px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            text-align: center;
+            -moz-appearance: textfield; /* Hide arrows for Firefox */
+        }
 
-    .info {
-      margin: 15px 0;
-      font-size: 1.1em;
-      color: #333;
-    }
+        /* Hide arrows for Chrome, Safari, Edge */
+        .input-group input[type="number"]::-webkit-outer-spin-button,
+        .input-group input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
 
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-    }
+        .input-group button {
+            background-color: #f48fb1; /* Baby pink button */
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9em;
+            margin-top: 10px;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
 
-    input[type="number"] {
-      padding: 10px;
-      border-radius: 10px;
-      border: 1px solid #ddd;
-      width: 100%;
-      box-sizing: border-box;
-      font-size: 1em;
-      text-align: center;
-      box-shadow: inset 2px 2px 5px rgba(0,0,0,0.05);
-    }
+        .input-group button:hover {
+            background-color: #f06292; /* Slightly darker pink on hover */
+            transform: translateY(-1px);
+        }
 
-    button {
-      padding: 12px 20px;
-      border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #ff9ecf, #ff66b2);
-      color: white;
-      font-size: 1em;
-      font-weight: bold;
-      cursor: pointer;
-      transition: 0.3s ease;
-      box-shadow: 0 5px 12px rgba(255, 105, 180, 0.3);
-    }
+        .input-group button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
 
-    button:hover {
-      opacity: 0.9;
-      transform: translateY(-2px);
-    }
+        .input-group button:disabled {
+            background-color: #ffccd5; /* Lighter pink when disabled */
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
 
-    .small-btn {
-      padding: 8px 14px;
-      font-size: 0.9em;
-    }
+        #status-text {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #555;
+            margin-top: 10px;
+        }
 
-    .goal-input-wrapper {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 15px;
-    }
+        #goal-display {
+            font-size: 0.9em;
+            color: #888;
+        }
 
-    .goal-input-wrapper input {
-      max-width: 150px;
-      flex: 1;
-    }
-
-    .divider {
-      margin: 15px 0;
-      border-top: 1px dashed #ffb6d9;
-    }
-
-    .message {
-      font-size: 0.95em;
-      margin-top: 10px;
-      min-height: 20px;
-    }
-
-    .success {
-      color: #4caf50;
-    }
-
-    .error {
-      color: #e53935;
-    }
-  </style>
+        .unit-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .unit-selector label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+        }
+        .unit-selector select {
+            padding: 6px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 0.9em;
+            background-color: #fefefe;
+            cursor: pointer;
+        }
+    </style>
 </head>
-<body>
-  <div class="tracker">
-    <h1>💧 Water Tracker</h1>
+<body class="flex items-center justify-center min-h-screen">
+    <div id="widget-container" class="rounded-2xl shadow-lg bg-white p-5 flex flex-col items-center gap-4">
+        <h2 class="text-xl font-semibold text-gray-700">Water Tracker</h2>
+        <canvas id="waterCanvas" width="150" height="150" class="rounded-full"></canvas>
+        <div id="status-text" class="text-lg font-bold text-gray-800"></div>
+        <div id="goal-display" class="text-sm text-gray-600"></div>
 
-    <div class="progress-container">
-      <div class="progress-bar" id="progressBarFill"></div>
-    </div>
-
-    <div class="info">
-      Today: <span id="todayIntake">0</span> <span id="currentIntakeUnit">ml</span> / 
-      <span id="waterGoal">2000</span> <span id="currentGoalUnit">ml</span>
-    </div>
-
-    <div class="controls">
-      <div>
-        <label for="waterAmount">Add Water:</label>
-        <input type="number" id="waterAmount" placeholder="Enter ml" min="50">
-        <button id="addWaterBtn">Add Water</button>
-      </div>
-
-      <div class="divider"></div>
-
-      <div>
-        <label for="setGoalInput">Set Goal:</label>
-        <div class="goal-input-wrapper">
-          <input type="number" id="setGoalInput" placeholder="New goal" min="100" value="2000">
-          <button id="setGoalBtn" class="small-btn">Set Goal</button>
+        <div class="unit-selector">
+            <label for="unitSelect">Unit:</label>
+            <select id="unitSelect" class="rounded-md">
+                <option value="ml">Milliliters (ml)</option>
+                <option value="L">Liters (L)</option>
+            </select>
         </div>
-      </div>
 
-      <button id="resetDayBtn" class="small-btn">Reset Today’s Intake</button>
-      <button id="unitToggle" class="small-btn">Switch to Liters</button>
+        <div class="input-group w-full">
+            <label for="currentWater" class="text-sm text-gray-700 mb-1"><span id="currentInputLabel">Current Intake</span>:</label>
+            <input type="number" id="currentWater" value="0" min="0" step="any" class="w-full p-2 border border-gray-300 rounded-md text-center">
+            <button id="addWaterBtn" class="mt-2 bg-pink-400 text-white py-2 px-4 rounded-lg shadow-md hover:bg-pink-500 transition-colors">Update Intake</button>
+        </div>
+
+        <div class="input-group w-full">
+            <label for="waterGoal" class="text-sm text-gray-700 mb-1"><span id="goalInputLabel">Set Goal</span>:</label>
+            <input type="number" id="waterGoal" value="2000" min="100" step="any" class="w-full p-2 border border-gray-300 rounded-md text-center">
+            <button id="setGoalBtn" class="mt-2 bg-pink-400 text-white py-2 px-4 rounded-lg shadow-md hover:bg-pink-500 transition-colors">Set Goal</button>
+        </div>
     </div>
 
-    <div id="message" class="message"></div>
-  </div>
+    <script>
+        const canvas = document.getElementById('waterCanvas');
+        const ctx = canvas.getContext('2d');
+        const currentWaterInput = document.getElementById('currentWater');
+        const waterGoalInput = document.getElementById('waterGoal');
+        const addWaterBtn = document.getElementById('addWaterBtn');
+        const setGoalBtn = document.getElementById('setGoalBtn');
+        const statusText = document.getElementById('status-text');
+        const goalDisplay = document.getElementById('goal-display');
+        const unitSelect = document.getElementById('unitSelect');
+        const currentInputLabel = document.getElementById('currentInputLabel');
+        const goalInputLabel = document.getElementById('goalInputLabel');
 
-  <script>
-    // Grab elements
-    const addWaterBtn = document.getElementById("addWaterBtn");
-    const setGoalBtn = document.getElementById("setGoalBtn");
-    const resetDayBtn = document.getElementById("resetDayBtn");
-    const unitToggle = document.getElementById("unitToggle");
+        let currentWaterML = 0; // Current water intake in ML (internal base unit)
+        let waterGoalML = 2000; // Daily water goal in ML (internal base unit)
+        let waveOffset = 0; // For water animation
+        let currentUnit = 'ml'; // Default unit
+        let animationInterval = null; // To store the animation interval ID
 
-    const waterAmountInput = document.getElementById("waterAmount");
-    const setGoalInput = document.getElementById("setGoalInput");
+        // Conversion factors
+        const ML_TO_LITER = 1000;
 
-    const todayIntakeDisplay = document.getElementById("todayIntake");
-    const waterGoalDisplay = document.getElementById("waterGoal");
-    const progressBarFill = document.getElementById("progressBarFill");
-    const message = document.getElementById("message");
-
-    const currentIntakeUnit = document.getElementById("currentIntakeUnit");
-    const currentGoalUnit = document.getElementById("currentGoalUnit");
-
-    // State
-    let todayIntake = 0;
-    let waterGoal = 2000;
-    let useLiters = false; // start in milliliters
-
-    // Update progress bar and values
-    function updateUI() {
-        let percentage = Math.min((todayIntake / waterGoal) * 100, 100);
-        progressBarFill.style.width = percentage + "%";
-
-        if (todayIntake >= waterGoal) {
-            progressBarFill.classList.add("goal-met");
-            message.textContent = "🎉 Goal reached!";
-            message.className = "message success";
-        } else {
-            progressBarFill.classList.remove("goal-met");
-            message.textContent = "";
-            message.className = "message";
+        // Function to save data to localStorage
+        function saveData() {
+            try {
+                localStorage.setItem('waterTrackerCurrentML', currentWaterML);
+                localStorage.setItem('waterTrackerGoalML', waterGoalML);
+                localStorage.setItem('waterTrackerUnit', currentUnit);
+            } catch (e) {
+                console.error("Failed to save to localStorage:", e);
+                // Optionally show a user-friendly message
+            }
         }
 
-        todayIntakeDisplay.textContent = useLiters ? (todayIntake / 1000).toFixed(2) : todayIntake;
-        waterGoalDisplay.textContent = useLiters ? (waterGoal / 1000).toFixed(2) : waterGoal;
+        // Function to load data from localStorage
+        function loadData() {
+            try {
+                const savedCurrent = localStorage.getItem('waterTrackerCurrentML');
+                const savedGoal = localStorage.getItem('waterTrackerGoalML');
+                const savedUnit = localStorage.getItem('waterTrackerUnit');
 
-        currentIntakeUnit.textContent = useLiters ? "L" : "ml";
-        currentGoalUnit.textContent = useLiters ? "L" : "ml";
-    }
-
-    // Add water
-    addWaterBtn.addEventListener("click", () => {
-        let amount = parseInt(waterAmountInput.value, 10);
-        if (isNaN(amount) || amount <= 0) {
-            message.textContent = "⚠️ Please enter a valid amount.";
-            message.className = "message error";
-            return;
+                if (savedCurrent !== null) {
+                    currentWaterML = parseFloat(savedCurrent);
+                }
+                if (savedGoal !== null) {
+                    waterGoalML = parseFloat(savedGoal);
+                }
+                if (savedUnit !== null) {
+                    currentUnit = savedUnit;
+                }
+                unitSelect.value = currentUnit; // Set dropdown to saved unit
+                updateInputAndDisplayBasedOnUnit(); // Update UI after loading
+            } catch (e) {
+                console.error("Failed to load from localStorage:", e);
+                // Data might be corrupted or storage denied, reset to defaults
+                currentWaterML = 0;
+                waterGoalML = 2000;
+                currentUnit = 'ml';
+                unitSelect.value = currentUnit;
+                updateInputAndDisplayBasedOnUnit();
+            }
         }
-        todayIntake += amount;
-        updateUI();
-    });
 
-    // Set new goal
-    setGoalBtn.addEventListener("click", () => {
-        let newGoal = parseInt(setGoalInput.value, 10);
-        if (isNaN(newGoal) || newGoal < 100) {
-            message.textContent = "⚠️ Goal must be at least 100 ml.";
-            message.className = "message error";
-            return;
+        // Converts value from ML to selected unit
+        function convertMLToSelectedUnit(valueML) {
+            if (currentUnit === 'L') {
+                return (valueML / ML_TO_LITER).toFixed(2); // Keep 2 decimal places for liters
+            }
+            return valueML.toFixed(0); // No decimals for ml
         }
-        waterGoal = newGoal;
-        updateUI();
-        message.textContent = "✅ Goal updated!";
-        message.className = "message success";
-    });
 
-    // Reset intake
-    resetDayBtn.addEventListener("click", () => {
-        todayIntake = 0;
-        updateUI();
-        message.textContent = "🔄 Intake reset!";
-        message.className = "message success";
-    });
+        // Converts value from selected unit to ML
+        function convertSelectedUnitToML(value) {
+            if (currentUnit === 'L') {
+                return value * ML_TO_LITER;
+            }
+            return value;
+        }
 
-    // Toggle units
-    unitToggle.addEventListener("click", () => {
-        useLiters = !useLiters;
-        unitToggle.textContent = useLiters ? "Switch to Milliliters" : "Switch to Liters";
-        updateUI();
-    });
+        // Updates input fields and labels based on the selected unit
+        function updateInputAndDisplayBasedOnUnit() {
+            currentWaterInput.value = convertMLToSelectedUnit(currentWaterML);
+            waterGoalInput.value = convertMLToSelectedUnit(waterGoalML);
+            currentInputLabel.textContent = `Current Intake (${currentUnit})`;
+            goalInputLabel.textContent = `Set Goal (${currentUnit})`;
+            drawWater(); // Redraw canvas with new unit display
+        }
 
-    // Initialize UI
-    updateUI();
-  </script>
+        // Draws the water filling animation
+        function drawWater() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear canvas
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) / 2 - 5; // -5 for a little padding
+
+            // Background circle (empty part)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fillStyle = '#fce4ec'; // Very light baby pink
+            ctx.fill();
+
+            // Calculate fill percentage based on internal ML values
+            let fillPercentage = currentWaterML / waterGoalML;
+            if (fillPercentage > 1) fillPercentage = 1; // Cap at 100%
+            if (fillPercentage < 0) fillPercentage = 0; // Cap at 0%
+
+            // Water color
+            const waterColor = '#f48fb1'; // Baby pink for the water
+
+            // Calculate water height
+            const waterHeight = fillPercentage * (radius * 2);
+            const waterY = canvas.height - waterHeight; // Y-coordinate of the bottom of the water
+
+            // Draw water (rectangular part that fills up)
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2); // Clip to the circle shape
+            ctx.clip();
+
+            ctx.fillStyle = waterColor;
+            ctx.fillRect(0, waterY, canvas.width, canvas.height - waterY); // Fill rectangle from bottom up
+
+            // Draw animated wave at the top of the water
+            ctx.beginPath();
+            ctx.moveTo(0, waterY);
+            for (let i = 0; i <= canvas.width; i += 5) {
+                // Adjust wave amplitude and frequency for a smoother look
+                const waveAmplitude = 5; // Height of the wave
+                const waveFrequency = 0.05; // How many waves across the width
+                const yOffset = Math.sin((i * waveFrequency) + waveOffset) * waveAmplitude;
+                ctx.lineTo(i, waterY + yOffset);
+            }
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.closePath();
+            ctx.fill();
+
+            // Outline for the circle
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = '#f8bbd0'; // Slightly darker baby pink for border
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // Update status text and goal display using selected unit
+            statusText.textContent = `${convertMLToSelectedUnit(currentWaterML)} ${currentUnit} / ${convertMLToSelectedUnit(waterGoalML)} ${currentUnit}`;
+            goalDisplay.textContent = `Goal: ${convertMLToSelectedUnit(waterGoalML)} ${currentUnit}`;
+
+            // Check if goal is reached
+            if (currentWaterML >= waterGoalML && waterGoalML > 0) {
+                statusText.textContent = 'Goal Reached! 🎉';
+            } else if (currentWaterML === 0 && waterGoalML === 0) {
+                statusText.textContent = 'Set your goal!';
+            } else if (currentWaterML === 0) {
+                statusText.textContent = `Start tracking!`;
+            }
+        }
+
+        // Main animation loop for wave
+        function animateWave() {
+            waveOffset += 0.05; // Speed of the wave
+            drawWater();
+            requestAnimationFrame(animateWave);
+        }
+
+        // Function to animate filling when intake is updated
+        function animateFill(targetWaterML) {
+            // Disable buttons during animation
+            addWaterBtn.disabled = true;
+            setGoalBtn.disabled = true;
+            unitSelect.disabled = true;
+
+            const startWaterML = currentWaterML;
+            const difference = targetWaterML - startWaterML;
+            const animationDuration = 1000; // 1 second for the animation
+            const frames = 60; // frames per second
+            const incrementPerFrame = difference / (animationDuration / (1000 / frames)); // Amount to add per frame
+            let currentFrame = 0;
+
+            if (animationInterval) {
+                clearInterval(animationInterval); // Clear any existing animation
+            }
+
+            animationInterval = setInterval(() => {
+                currentWaterML = startWaterML + (incrementPerFrame * currentFrame);
+                // Ensure we don't overshoot the target if there are floating point inaccuracies
+                if (difference > 0) { // Filling up
+                    if (currentWaterML >= targetWaterML) {
+                        currentWaterML = targetWaterML;
+                        clearInterval(animationInterval);
+                        animationInterval = null;
+                        saveData(); // Save data after animation completes
+                        // Re-enable buttons
+                        addWaterBtn.disabled = false;
+                        setGoalBtn.disabled = false;
+                        unitSelect.disabled = false;
+                    }
+                } else { // Decreasing (if input is less than current, though normally we'd add)
+                    if (currentWaterML <= targetWaterML) {
+                        currentWaterML = targetWaterML;
+                        clearInterval(animationInterval);
+                        animationInterval = null;
+                        saveData(); // Save data after animation completes
+                        // Re-enable buttons
+                        addWaterBtn.disabled = false;
+                        setGoalBtn.disabled = false;
+                        unitSelect.disabled = false;
+                    }
+                }
+                drawWater(); // Draw current state
+                currentFrame++;
+            }, 1000 / frames); // Run at ~60 FPS
+        }
+
+
+        // Event Listeners
+        addWaterBtn.addEventListener('click', () => {
+            let amountInSelectedUnit = parseFloat(currentWaterInput.value);
+            if (!isNaN(amountInSelectedUnit) && amountInSelectedUnit >= 0) {
+                const targetWaterML = convertSelectedUnitToML(amountInSelectedUnit);
+                animateFill(targetWaterML); // Trigger the filling animation
+            } else {
+                currentWaterInput.value = convertMLToSelectedUnit(currentWaterML); // Reset to current valid value if input is bad
+            }
+        });
+
+        setGoalBtn.addEventListener('click', () => {
+            let newGoalInSelectedUnit = parseFloat(waterGoalInput.value);
+            // Ensure goal is positive when converted to ML
+            if (!isNaN(newGoalInSelectedUnit) && convertSelectedUnitToML(newGoalInSelectedUnit) > 0) {
+                waterGoalML = convertSelectedUnitToML(newGoalInSelectedUnit); // Convert to ML for internal storage
+                saveData();
+                drawWater(); // Redraw immediately
+            } else {
+                waterGoalInput.value = convertMLToSelectedUnit(waterGoalML); // Reset to current valid value if input is bad
+            }
+        });
+
+        unitSelect.addEventListener('change', (event) => {
+            currentUnit = event.target.value;
+            saveData();
+            updateInputAndDisplayBasedOnUnit(); // Update UI when unit changes
+        });
+
+        // Initialize on window load
+        window.onload = function() {
+            loadData(); // Load saved data first
+            animateWave(); // Start the wave animation
+        };
+    </script>
 </body>
 </html>
