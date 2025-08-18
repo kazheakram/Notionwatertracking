@@ -312,9 +312,8 @@
                 statusText.textContent = 'Goal Reached! 🎉';
             } else if (currentWaterML === 0 && waterGoalML === 0) {
                 statusText.textContent = 'Set your goal!';
-            } else if (currentWaterML === 0) {
-                statusText.textContent = `Start tracking!`;
             }
+            // Removed the 'Start tracking!' condition
         }
 
         // Main animation loop for wave
