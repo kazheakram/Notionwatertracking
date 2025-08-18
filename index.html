@@ -133,7 +133,7 @@
 </head>
 <body class="flex items-center justify-center min-h-screen">
     <div id="widget-container" class="rounded-2xl shadow-lg bg-white p-5 flex flex-col items-center gap-4">
-        <h2 class="text-xl font-semibold text-gray-700">Water Tracker</h2>
+        <h2 class="text-xl font-semibold text-gray-700"></h2>
         <canvas id="waterCanvas" width="150" height="150" class="rounded-full"></canvas>
         <div id="status-text" class="text-lg font-bold text-gray-800"></div>
         <div id="goal-display" class="text-sm text-gray-600"></div>
@@ -309,11 +309,10 @@
 
             // Check if goal is reached
             if (currentWaterML >= waterGoalML && waterGoalML > 0) {
-                statusText.textContent = 'Goal Reached! 🎉';
+                statusText.textContent = 'Goal Reached! �';
             } else if (currentWaterML === 0 && waterGoalML === 0) {
                 statusText.textContent = 'Set your goal!';
             }
-            // Removed the 'Start tracking!' condition
         }
 
         // Main animation loop for wave
@@ -410,3 +409,4 @@
     </script>
 </body>
 </html>
+�
