@@ -239,6 +239,20 @@
         // Firestore document reference
         let userDocRef;
 
+        // Add a timeout for the loading overlay
+        const loadingTimeout = setTimeout(() => {
+            if (loadingOverlay.style.display !== 'none') { // Only show error if still loading
+                loadingOverlay.textContent = 'Failed to load data. Check console for errors.';
+                loadingOverlay.style.color = '#dc2626'; // Red color for error
+                loadingOverlay.style.display = 'flex';
+                console.error("Loading data timed out. Please ensure your Firebase project is set up correctly (Firestore enabled, security rules allow reads/writes) and you have an active internet connection.");
+                // Optionally hide the error message after a few seconds
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 5000);
+            }
+        }, 10000); // 10 seconds timeout
+
         // Function to get today's date in YYYY-MM-DD format (UTC to avoid timezone issues with daily reset)
         function getTodayDateString() {
             const today = new Date();
@@ -282,6 +296,9 @@
 
             // Set up real-time listener for the document
             onSnapshot(userDocRef, (docSnap) => {
+                clearTimeout(loadingTimeout); // Clear timeout on successful load
+                loadingOverlay.style.display = 'none'; // Hide loading overlay once data is loaded/initialized
+
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     const lastResetDate = data.lastResetDate;
@@ -309,10 +326,16 @@
                     currentUnit = 'ml';
                     saveData(); // Save initial data to Firestore
                 }
-                loadingOverlay.style.display = 'none'; // Hide loading overlay once data is loaded/initialized
             }, (error) => {
+                clearTimeout(loadingTimeout); // Clear timeout on error
                 console.error("Error getting real-time updates from Firestore:", error);
-                loadingOverlay.style.display = 'none'; // Hide loading on error too
+                loadingOverlay.textContent = 'Error loading data. Check console for details.';
+                loadingOverlay.style.color = '#dc2626';
+                loadingOverlay.style.display = 'flex';
+                setTimeout(() => {
+                    loadingOverlay.style.display = 'none';
+                }, 5000); // Hide error message after 5 seconds
+
                 // Fallback to local defaults if Firestore fails badly
                 currentWaterML = 0;
                 waterGoalML = 2000;
@@ -524,11 +547,29 @@
                         await signInWithCustomToken(auth, initialAuthToken);
                     } catch (error) {
                         console.error("Error signing in with custom token:", error);
-                        // Fallback to anonymous sign-in if custom token fails
-                        await signInAnonymously(auth);
+                        // Also hide loading overlay and show error if custom token fails
+                        clearTimeout(loadingTimeout);
+                        loadingOverlay.textContent = 'Auth error. Check console for details.';
+                        loadingOverlay.style.color = '#dc2626';
+                        loadingOverlay.style.display = 'flex';
+                        setTimeout(() => {
+                            loadingOverlay.style.display = 'none';
+                        }, 5000);
+                        await signInAnonymously(auth); // Still try anonymous as a fallback
                     }
                 } else {
-                    await signInAnonymously(auth);
+                    try {
+                        await signInAnonymously(auth);
+                    } catch (error) {
+                        console.error("Error signing in anonymously:", error);
+                        clearTimeout(loadingTimeout);
+                        loadingOverlay.textContent = 'Auth error. Check console for details.';
+                        loadingOverlay.style.color = '#dc2626';
+                        loadingOverlay.style.display = 'flex';
+                        setTimeout(() => {
+                            loadingOverlay.style.display = 'none';
+                        }, 5000);
+                    }
                 }
             }
         });
