@@ -129,10 +129,41 @@
             background-color: #fefefe;
             cursor: pointer;
         }
+
+        #resetBtn {
+            background-color: #f8bbd0; /* A lighter pink for reset */
+            color: #555;
+            padding: 6px 12px;
+            font-size: 0.8em;
+            margin-top: 15px; /* Add some space above it */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+        }
+
+        #resetBtn:hover {
+            background-color: #fce4ec; /* Even lighter on hover */
+            color: #333;
+        }
+
+        #loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2em;
+            color: #f48fb1;
+            z-index: 1000;
+            border-radius: 20px;
+        }
     </style>
 </head>
 <body class="flex items-center justify-center min-h-screen">
-    <div id="widget-container" class="rounded-2xl shadow-lg bg-white p-5 flex flex-col items-center gap-4">
+    <div id="widget-container" class="rounded-2xl shadow-lg bg-white p-5 flex flex-col items-center gap-4 relative">
+        <div id="loading-overlay">Loading...</div>
         <h2 class="text-xl font-semibold text-gray-700"></h2>
         <canvas id="waterCanvas" width="150" height="150" class="rounded-full"></canvas>
         <div id="status-text" class="text-lg font-bold text-gray-800"></div>
@@ -157,9 +188,30 @@
             <input type="number" id="waterGoal" value="2000" min="100" step="any" class="w-full p-2 border border-gray-300 rounded-md text-center">
             <button id="setGoalBtn" class="mt-2 bg-pink-400 text-white py-2 px-4 rounded-lg shadow-md hover:bg-pink-500 transition-colors">Set Goal</button>
         </div>
+
+        <button id="resetBtn" class="bg-pink-300 text-gray-700 py-1 px-3 rounded-lg shadow-sm hover:bg-pink-200 transition-colors">Reset Daily Intake</button>
     </div>
 
-    <script>
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables provided by the Canvas environment (MUST BE USED)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        let userId = null; // Will be set after authentication
+        let isAuthReady = false; // Flag to ensure Firestore operations only happen after auth
+
+        // Get DOM elements
         const canvas = document.getElementById('waterCanvas');
         const ctx = canvas.getContext('2d');
         const currentWaterInput = document.getElementById('currentWater');
@@ -171,7 +223,10 @@
         const unitSelect = document.getElementById('unitSelect');
         const currentInputLabel = document.getElementById('currentInputLabel');
         const goalInputLabel = document.getElementById('goalInputLabel');
+        const resetBtn = document.getElementById('resetBtn');
+        const loadingOverlay = document.getElementById('loading-overlay');
 
+        // State variables
         let currentWaterML = 0; // Current water intake in ML (internal base unit)
         let waterGoalML = 2000; // Daily water goal in ML (internal base unit)
         let waveOffset = 0; // For water animation
@@ -181,63 +236,90 @@
         // Conversion factors
         const ML_TO_LITER = 1000;
 
-        // Function to get today's date in YYYY-MM-DD format
+        // Firestore document reference
+        let userDocRef;
+
+        // Function to get today's date in YYYY-MM-DD format (UTC to avoid timezone issues with daily reset)
         function getTodayDateString() {
             const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
-            const day = String(today.getDate()).padStart(2, '0');
+            // Get UTC date components to ensure consistent daily resets regardless of user's timezone
+            const year = today.getUTCFullYear();
+            const month = String(today.getUTCMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const day = String(today.getUTCDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
 
-        // Function to save data to localStorage
-        function saveData() {
+        // Function to save data to Firestore
+        async function saveData() {
+            if (!isAuthReady || !userId || !userDocRef) {
+                console.warn("Authentication not ready or userId/userDocRef not set. Cannot save data.");
+                return;
+            }
             try {
-                localStorage.setItem('waterTrackerCurrentML', currentWaterML);
-                localStorage.setItem('waterTrackerGoalML', waterGoalML);
-                localStorage.setItem('waterTrackerUnit', currentUnit);
-                localStorage.setItem('waterTrackerLastResetDate', getTodayDateString()); // Save current date
+                // Set the data in Firestore. `merge: true` ensures only specified fields are updated.
+                await setDoc(userDocRef, {
+                    currentWaterML: currentWaterML,
+                    waterGoalML: waterGoalML,
+                    currentUnit: currentUnit,
+                    lastResetDate: getTodayDateString()
+                }, { merge: true });
+                // console.log("Data saved to Firestore.");
             } catch (e) {
-                console.error("Failed to save to localStorage:", e);
-                // Optionally show a user-friendly message
+                console.error("Error saving data to Firestore:", e);
+                // In a real app, you might show a user-friendly error message here
             }
         }
 
-        // Function to load data from localStorage
-        function loadData() {
-            try {
-                const savedCurrent = localStorage.getItem('waterTrackerCurrentML');
-                const savedGoal = localStorage.getItem('waterTrackerGoalML');
-                const savedUnit = localStorage.getItem('waterTrackerUnit');
-                const lastResetDate = localStorage.getItem('waterTrackerLastResetDate');
-                const todayDate = getTodayDateString();
+        // Function to load data from Firestore or initialize
+        async function loadDataAndSetupRealtimeListener() {
+            if (!userId) {
+                console.warn("User ID not available yet for loading data.");
+                return;
+            }
 
-                if (lastResetDate !== todayDate) {
-                    // It's a new day, reset current water intake
+            userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'waterTracker', 'data');
+            // console.log("Firestore document path:", userDocRef.path);
+
+            // Set up real-time listener for the document
+            onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const lastResetDate = data.lastResetDate;
+                    const todayDate = getTodayDateString();
+
+                    // Check for daily reset condition
+                    if (lastResetDate !== todayDate) {
+                        currentWaterML = 0; // Reset intake for new day
+                        saveData(); // Save the reset state (this will update lastResetDate too)
+                    } else {
+                        currentWaterML = data.currentWaterML !== undefined ? data.currentWaterML : 0;
+                    }
+
+                    waterGoalML = data.waterGoalML !== undefined ? data.waterGoalML : 2000;
+                    currentUnit = data.currentUnit !== undefined ? data.currentUnit : 'ml';
+
+                    // Update UI inputs and display
+                    unitSelect.value = currentUnit;
+                    updateInputAndDisplayBasedOnUnit();
+                } else {
+                    // Document does not exist, initialize with default values
+                    console.log("No existing data found in Firestore, initializing...");
                     currentWaterML = 0;
-                    localStorage.setItem('waterTrackerLastResetDate', todayDate); // Update reset date
-                } else if (savedCurrent !== null) {
-                    currentWaterML = parseFloat(savedCurrent);
+                    waterGoalML = 2000;
+                    currentUnit = 'ml';
+                    saveData(); // Save initial data to Firestore
                 }
-
-                if (savedGoal !== null) {
-                    waterGoalML = parseFloat(savedGoal);
-                }
-                if (savedUnit !== null) {
-                    currentUnit = savedUnit;
-                }
-                unitSelect.value = currentUnit; // Set dropdown to saved unit
-                updateInputAndDisplayBasedOnUnit(); // Update UI after loading
-            } catch (e) {
-                console.error("Failed to load from localStorage:", e);
-                // Data might be corrupted or storage denied, reset to defaults
+                loadingOverlay.style.display = 'none'; // Hide loading overlay once data is loaded/initialized
+            }, (error) => {
+                console.error("Error getting real-time updates from Firestore:", error);
+                loadingOverlay.style.display = 'none'; // Hide loading on error too
+                // Fallback to local defaults if Firestore fails badly
                 currentWaterML = 0;
                 waterGoalML = 2000;
                 currentUnit = 'ml';
                 unitSelect.value = currentUnit;
                 updateInputAndDisplayBasedOnUnit();
-                localStorage.setItem('waterTrackerLastResetDate', getTodayDateString()); // Ensure date is set on error
-            }
+            });
         }
 
         // Converts value from ML to selected unit
@@ -258,10 +340,8 @@
 
         // Updates input fields and labels based on the selected unit
         function updateInputAndDisplayBasedOnUnit() {
-            // Note: currentWaterInput is now for *amount to add*, not current total display.
-            // So we only set the waterGoalInput here. currentWaterInput will be managed on add.
             waterGoalInput.value = convertMLToSelectedUnit(waterGoalML);
-            currentInputLabel.textContent = `Add Intake (${currentUnit})`; // Changed label
+            currentInputLabel.textContent = `Add Intake (${currentUnit})`;
             goalInputLabel.textContent = `Set Goal (${currentUnit})`;
             drawWater(); // Redraw canvas with new unit display
         }
@@ -347,6 +427,7 @@
             addWaterBtn.disabled = true;
             setGoalBtn.disabled = true;
             unitSelect.disabled = true;
+            resetBtn.disabled = true;
 
             const startWaterML = currentWaterML;
             const difference = targetWaterML - startWaterML;
@@ -372,6 +453,7 @@
                         addWaterBtn.disabled = false;
                         setGoalBtn.disabled = false;
                         unitSelect.disabled = false;
+                        resetBtn.disabled = false;
                     }
                 } else { // Decreasing (if input is less than current, though normally we'd add)
                     if (currentWaterML <= targetWaterML) {
@@ -383,6 +465,7 @@
                         addWaterBtn.disabled = false;
                         setGoalBtn.disabled = false;
                         unitSelect.disabled = false;
+                        resetBtn.disabled = false;
                     }
                 }
                 drawWater(); // Draw current state
@@ -409,8 +492,7 @@
             // Ensure goal is positive when converted to ML
             if (!isNaN(newGoalInSelectedUnit) && convertSelectedUnitToML(newGoalInSelectedUnit) > 0) {
                 waterGoalML = convertSelectedUnitToML(newGoalInSelectedUnit); // Convert to ML for internal storage
-                saveData();
-                drawWater(); // Redraw immediately
+                saveData(); // This will trigger onSnapshot to update UI
             } else {
                 waterGoalInput.value = convertMLToSelectedUnit(waterGoalML); // Reset to current valid value if input is bad
             }
@@ -418,14 +500,42 @@
 
         unitSelect.addEventListener('change', (event) => {
             currentUnit = event.target.value;
-            saveData();
-            updateInputAndDisplayBasedOnUnit(); // Update UI when unit changes
+            saveData(); // This will trigger onSnapshot to update UI
         });
 
-        // Initialize on window load
+        // Manual reset button event listener
+        resetBtn.addEventListener('click', () => {
+            currentWaterML = 0; // Reset current intake to 0
+            saveData(); // Save the reset state to Firestore, which will update UI via onSnapshot
+        });
+
+        // --- Firebase Authentication Setup and Data Loading ---
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                userId = user.uid;
+                // console.log("User authenticated:", userId);
+                isAuthReady = true;
+                await loadDataAndSetupRealtimeListener();
+            } else {
+                // Not signed in, attempt anonymous sign-in or use provided token
+                if (initialAuthToken) {
+                    try {
+                        await signInWithCustomToken(auth, initialAuthToken);
+                    } catch (error) {
+                        console.error("Error signing in with custom token:", error);
+                        // Fallback to anonymous sign-in if custom token fails
+                        await signInAnonymously(auth);
+                    }
+                } else {
+                    await signInAnonymously(auth);
+                }
+            }
+        });
+
+        // Initialize on window load: Start wave animation and wait for authentication
         window.onload = function() {
-            loadData(); // Load saved data first
-            animateWave(); // Start the wave animation
+            animateWave(); // Start the wave animation immediately
         };
     </script>
 </body>
